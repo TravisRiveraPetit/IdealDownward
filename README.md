@@ -11,7 +11,8 @@ removed.
 1. Fast Downward's translator grounds the PDDL task into a SAS+ task (`output.sas`).
 2. `src/ideal/stnf.py` transforms the task into simple transition normal form (STNF), in which
    every operator mentions the same variables in its precondition and in its effect
-   (`output.sas_stnf`).
+   (`output.sas_stnf`). By default, it skips operator copies whose precondition contains two
+   facts of a mutex group, because such copies are applicable only in unreachable states.
 3. `src/ideal/sas2singular.py` encodes every state as a monomial with one variable per fact and
    every operator as the binomial x^pre - x^eff. It writes a [Singular](https://www.singular.uni-kl.de)
    script (`output.sing`) that decides whether the monomial of the initial state lies in the ideal
@@ -42,6 +43,7 @@ Options:
 - `--workdir DIR`: directory for the intermediate files (default: current directory)
 - `--plan-file FILE`: where to write the plan (default: `sas_plan`)
 - `--max-operators N`: maximum number of operators after the STNF transformation
+- `--no-mutexes`: keep the operator copies that violate mutexes
 - `--search-limit N`: maximum number of states per search when a backward step cannot be replaced
   by a single operator
 
@@ -50,6 +52,13 @@ The three steps can also be run separately:
     python3 src/ideal/stnf.py output.sas output.sas_stnf
     python3 src/ideal/sas2singular.py output.sas_stnf output.sing
     Singular -q output.sing
+
+To check whether a task is invertible, that is, whether every STNF operator is undone by a single
+operator, run
+
+    python3 src/ideal/invertibility.py output.sas
+
+Invertible tasks are reversible, so for them the answer of the planner is exact.
 
 Exit codes:
 

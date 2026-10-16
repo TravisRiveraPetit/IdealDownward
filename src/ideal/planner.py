@@ -134,6 +134,8 @@ def main():
     parser.add_argument("--plan-file", default="sas_plan")
     parser.add_argument("--max-operators", type=int, default=1_000_000,
                         help="maximum number of operators after the STNF transformation")
+    parser.add_argument("--no-mutexes", action="store_true",
+                        help="STNF without pruning the copies that violate mutexes")
     parser.add_argument("--search-limit", type=int, default=100_000,
                         help="maximum number of states per search for a backward step")
     args = parser.parse_args()
@@ -156,7 +158,7 @@ def main():
     task = read_task(sas_file)
     log(f"task: {len(task.variables)} variables, {len(task.operators)} operators")
 
-    stnf = stnf_task(read_task(sas_file), args.max_operators)
+    stnf = stnf_task(read_task(sas_file), args.max_operators, use_mutexes=not args.no_mutexes)
     write_task(stnf, path[".sas_stnf"])
     gens = binomials(stnf)
     with open(path[".sing"], "w") as f:
