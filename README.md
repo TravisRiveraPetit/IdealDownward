@@ -42,6 +42,10 @@ Options:
 - `--singular PATH`: Singular executable (default: `$SINGULAR`, otherwise `Singular`)
 - `--workdir DIR`: directory for the intermediate files (default: current directory)
 - `--plan-file FILE`: where to write the plan (default: `sas_plan`)
+- `--time-limit SECONDS`, `--memory-limit MIB`: overall limits for the planner and the programs it
+  calls (Linux only). As with Fast Downward's `--overall-time-limit` and `--overall-memory-limit`,
+  the translator and Singular get the CPU time that remains, and Singular gets only the memory that
+  the planner itself does not use.
 - `--max-operators N`: maximum number of operators after the STNF transformation
 - `--no-mutexes`: keep the operator copies that violate mutexes
 - `--search-limit N`: maximum number of states per search when a backward step cannot be replaced
@@ -67,7 +71,13 @@ Exit codes:
 | 0    | plan found and validated |
 | 11   | unsolvability proved |
 | 12   | the initial state is connected to a goal state, but no plan was found (the task is not reversible) |
+| 20   | the translator ran out of memory |
+| 21   | the translator ran out of time |
+| 22   | Singular or the planner ran out of memory |
+| 23   | Singular or the planner ran out of time |
 | 1    | error, for example an unsupported task |
+
+The codes 11, 12, and 20-23 have the same meaning as in Fast Downward.
 
 
 ## Limitations
