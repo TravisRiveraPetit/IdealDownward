@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-"""IdealDownward: planning as ideal membership. See README.md and src/ideal/planner.py."""
+"""Ideal Downward: planning as ideal membership. See README.md and src/ideal/planner.py."""
 
 import os
 import sys

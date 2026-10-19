@@ -1,6 +1,6 @@
-# IdealDownward
+# Ideal Downward
 
-IdealDownward solves undirected classical planning tasks, in which every operator is undone by an
+Ideal Downward solves undirected classical planning tasks, in which every operator is undone by an
 inverse operator, with computer algebra, by reducing them to ideal membership problems in
 polynomial rings. It uses the translator of the
 [Fast Downward](https://www.fast-downward.org) planning system, whose search component has been
@@ -101,12 +101,12 @@ contributors; see the README of the Fast Downward repository for the list of con
 ## License
 
 ```
-IdealDownward is free software: you can redistribute it and/or modify
+Ideal Downward is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or (at
 your option) any later version.
 
-IdealDownward is distributed in the hope that it will be useful, but
+Ideal Downward is distributed in the hope that it will be useful, but
 WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 General Public License for more details.
