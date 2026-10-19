@@ -1,11 +1,11 @@
-"""Check whether a task is invertible: every operator of its STNF is undone by a single operator.
+"""Check whether the STNF of a task is undirected: every operator is undone by a single operator.
 
 An operator o' undoes an STNF operator o if, in every state in which o is applicable, o' is
 applicable after o and restores the state. With prevail conditions counted on both sides, this
 holds if and only if pre(o') is contained in eff(o), eff(o') is contained in pre(o), and o'
 mentions every variable that o changes (for variables with at least two values). So o' changes
-back exactly the variables that o changes. Invertible tasks are reversible, and for reversible
-tasks the ideal test of the planner is exact.
+back exactly the variables that o changes. For undirected tasks, the ideal test of the planner is
+exact, and plans are extracted from membership certificates without search.
 
 Usage: python3 invertibility.py output.sas
 """
@@ -51,10 +51,10 @@ def main():
     task = stnf_task(read_task(args.sas_file), args.max_operators, use_mutexes=not args.no_mutexes)
     missing = operators_without_inverse(task)
     if not missing:
-        print(f"invertible: all {len(task.operators)} STNF operators have an inverse")
+        print(f"undirected: all {len(task.operators)} STNF operators have an inverse")
     else:
         names = sorted({op.name for op in missing})
-        print(f"not invertible: {len(missing)} of {len(task.operators)} STNF operators have no inverse, "
+        print(f"not undirected: {len(missing)} of {len(task.operators)} STNF operators have no inverse, "
               f"from {len(names)} operators, for example: {', '.join(names[:5])}")
 
 

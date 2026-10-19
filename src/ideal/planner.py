@@ -10,8 +10,8 @@ Usage (from the repository root):
 Exit codes, following Fast Downward where possible:
    0  plan found
   11  unsolvability proved
-  12  no plan found although the initial state is connected to a goal state (possible only if the
-      task is not reversible)
+  12  no plan found although the monomial of the initial state lies in the ideal (possible only if
+      the task is not undirected)
   20  the translator ran out of memory
   21  the translator ran out of time
   22  Singular or the planner ran out of memory
@@ -158,7 +158,7 @@ def run_singular(singular, script, output, limits):
 
 
 def certificate_graph(task, gens, terms):
-    """The graph H of Proposition 10, restricted to state monomials."""
+    """The graph H of the certificate (see the paper), restricted to state monomials."""
     offsets, n = ring_offsets(task)
     fact = [None] * n
     for var, v in enumerate(task.variables):
@@ -192,42 +192,36 @@ def certificate_graph(task, gens, terms):
     return graph
 
 
-def bfs(start, successors, is_target, limit=None):
-    """Breadth-first search. Returns the states of a path to a target and the labels of its edges."""
+def bfs(graph, start, is_target):
+    """Breadth-first search in a graph given as adjacency sets. Returns the states of a shortest
+    path from start to a target, or None."""
     parent = {start: None}
     queue = collections.deque([start])
     while queue:
         u = queue.popleft()
         if is_target(u):
-            states, labels = [u], []
+            states = [u]
             while parent[u] is not None:
-                u, label = parent[u]
+                u = parent[u]
                 states.append(u)
-                labels.append(label)
-            return states[::-1], labels[::-1]
-        for w, label in successors(u):
+            return states[::-1]
+        for w in graph[u]:
             if w not in parent:
-                parent[w] = (u, label)
+                parent[w] = u
                 queue.append(w)
-        if limit is not None and len(parent) > limit:
-            return None
     return None
 
 
-def forward_steps(task, u, w, limit):
-    """Operators that lead from u to w: a single operator if one exists, otherwise found by search.
+def operator_between(task, u, w):
+    """An operator that leads from state u to state w, or None if there is none.
 
-    A search is needed only for a backward step whose operator cannot be undone by a single operator.
+    A step of a path in the certificate graph applies the operator of its edge forwards or
+    backwards. In an undirected task, a backward step is undone by an inverse of the operator.
     """
     for op in task.operators:
         if applicable(op, u) and apply(op, u) == w:
-            return [op]
-
-    def successors(s):
-        return [(apply(op, s), op) for op in task.operators if applicable(op, s)]
-
-    found = bfs(u, successors, lambda s: s == w, limit)
-    return None if found is None else found[1]
+            return op
+    return None
 
 
 def plan(args, log):
@@ -263,24 +257,23 @@ def plan(args, log):
     limits.restrict_self()
     log(f"Singular: Groebner basis with {stats.get('BASIS_SIZE')} elements in {stats.get('STD_MS')} ms")
     if not member:
-        log("result: the initial state is not connected to a goal state, so the task is unsolvable")
+        log("result: the monomial of the initial state is not in the ideal, so the task is unsolvable")
         return UNSOLVABLE
-    log(f"result: the initial state is connected to a goal state "
+    log(f"result: the monomial of the initial state is in the ideal "
         f"(certificate with {len(terms)} terms in {stats.get('LIFT_MS')} ms)")
 
     graph = certificate_graph(stnf, gens, terms)
-    found = bfs(tuple(task.init), lambda u: ((w, None) for w in graph[u]), lambda u: satisfies(u, task.goal))
-    if found is None:
+    states = bfs(graph, tuple(task.init), lambda u: satisfies(u, task.goal))
+    if states is None:
         raise RuntimeError("the certificate does not connect the initial state to a goal state")
-    states = found[0]
     steps = []
     for u, w in zip(states, states[1:]):
-        forward = forward_steps(task, u, w, args.search_limit)
-        if forward is None:
-            log(f"no plan: a backward step on the path with {len(states) - 1} steps cannot be replaced "
-                f"by forward steps (the task is not reversible, or the search limit is too small)")
+        op = operator_between(task, u, w)
+        if op is None:
+            log(f"no plan: a backward step on the path with {len(states) - 1} steps has no inverse "
+                f"operator, so the task is not undirected")
             return NO_PLAN
-        steps += forward
+        steps.append(op)
 
     state = tuple(task.init)
     for op in steps:
@@ -311,8 +304,6 @@ def main():
                         help="maximum number of operators after the STNF transformation")
     parser.add_argument("--no-mutexes", action="store_true",
                         help="STNF without pruning the copies that violate mutexes")
-    parser.add_argument("--search-limit", type=int, default=100_000,
-                        help="maximum number of states per search for a backward step")
     args = parser.parse_args()
     if len(args.inputs) > 2:
         parser.error("expected domain and problem files, or one SAS file")
